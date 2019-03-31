@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style media="screen">
+      .message{
+        width: 500px;
+        height: 300px;
+        border: 1px solid #cccccc;
+        padding: 20px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <h4>留言板</h4>
+
+      <div class="message">
+      <% if(message){ %>
+      <% var topices = message.split('|'); %>
+      <% topices.forEach(item=>{ %>
+      <% if(item.split(":")[0]){ %>
+        <div><span>用户<%=item.split(":")[0]%></span> : <%= item.split(":")[1]%>&nbsp;&nbsp;&nbsp;(<%= item.split(":")[2]%>)</div>
+        <%}%>
+      <%})%>
+    <%}%>
+    </div>
+
+    <% if(user){ %>
+      <br/><br/>
+      <form class="messageform" action="/board/send" method="post">
+        <textarea name="message" style="width:700px;height:80px"></textarea>
+        <input type="submit" name="" value="发送">
+      </form>
+
+    </div>
+
+      <nav>
+        <h3><%= user.loginname%>已登录</h3>
+        <a href="/board/logout">退出</a>
+      </nav>
+
+    <% }else{ %>
+
+    <!-- 登陆 -->
+    <br/><br/>
+    <span>登陆</span>
+    <form class="login" action="/board/login" method="post">
+      <span>用户名</span><input type="text" name="loginname" value=""><span style="color:red" data-error="errorname"></span><br/>
+      <span>密码</span><input type="password" name="password" value=""><span style="color:red" data-error="errorpwd"></span><br/>
+      <input type="submit" name="" value="登陆">
+    </form>
+
+    <br/><br/>
+    <!-- 注册 -->
+    <span>注册</span>
+    <form class="reg" action="/board/reg" method="post">
+      <span>用户名</span><input type="text" name="loginname" value=""><span style="color:red" data-error="errorname"></span><br/>
+      <span>密码</span><input type="text" name="password" value=""><span style="color:red" data-error="errorpwd"></span><br/>
+      <span>确认密码</span><input type="text" name="confirm" value=""><span style="color:red" data-error="errorcpwd"></span><br/>
+      <input type="submit" name="" value="注册">
+    </form>
+
+    <% } %>
+
+    <script type="text/javascript" src="/javascripts/validate.js"></script>
+
+    <script type="text/javascript">
+
+    const loginform = document.querySelector(".login");
+    const regform = document.querySelector(".reg");
+
+
+    //登陆验证
+    if(loginform){
+      const errorLname = loginform.querySelector("[data-error=errorname]");
+      const errorLpwd = loginform.querySelector("[data-error=errorpwd]");
+    loginform.onsubmit = function (event) {
+      event.preventDefault();
+
+      const lnameinput = loginform.querySelector("[name=loginname]");
+      const lpwdinput = loginform.querySelector("[name=password]");
+      const lname = lnameinput.value;
+      const lpwd = lpwdinput.value;
+
+      const errors = loginvalidate(lname,lpwd);
+      if(errors){
+        showInfoLogin(JSON.stringify(errors));
+      }else{
+        fetch("/board/login",{
+          method:"post",
+          body:JSON.stringify({lname,lpwd}),
+          headers:{"Content-Type":"application/json"},
+          credentials: 'include'
+        }).then(res=>res.text())
+          .then(errors=>{
+            showInfoLogin(errors);
+          });
+      }
+    }
+  }
+
+    //注册验证
+    if(regform){
+      const errorRname = regform.querySelector("[data-error=errorname]");
+      const errorRpwd = regform.querySelector("[data-error=errorpwd]");
+      const errorCpwd = regform.querySelector("[data-error=errorcpwd]");
+      regform.onsubmit = function (event) {
+        event.preventDefault();
+
+        const rnameinput = regform.querySelector("[name=loginname]");
+        const rpwdinput = regform.querySelector("[name=password]");
+        const cpwdinput = regform.querySelector("[name=confirm]");
+        const rname = rnameinput.value;
+        const rpwd = rpwdinput.value;
+        const cpwd = cpwdinput.value;
+
+        const errors = regvalidate(rname,rpwd,cpwd);
+        if(errors){
+          showInfoReg(JSON.stringify(errors));
+        }else{
+          fetch("/board/reg",{
+            method:"post",
+            body:JSON.stringify({rname,rpwd,cpwd}),
+            headers:{"Content-Type":"application/json"},
+            // credentials: 'include'
+          }).then(res=>res.text())
+            .then(errors=>{
+              showInfoReg(errors);
+            })
+        }
+      }
+    }
+
+    //登陆验证错误信息显示
+    function showInfoLogin(errors) {
+      const errorLname = loginform.querySelector("[data-error=errorname]");
+      const errorLpwd = loginform.querySelector("[data-error=errorpwd]");
+        errorLname.innerText = "";
+        errorLpwd.innerText = "";
+        if(errors){
+          errors = JSON.parse(errors);
+          if(errors.name){
+            errorLname.innerText = errors.name;
+          }
+          if (errors.password) {
+            errorLpwd.innerText = errors.password;
+          }
+        }else{
+          location.reload();
+        }
+      }
+
+      //注册验证错误信息显示
+      function showInfoReg(errors) {
+        const errorRname = regform.querySelector("[data-error=errorname]");
+        const errorRpwd = regform.querySelector("[data-error=errorpwd]");
+        const errorCpwd = regform.querySelector("[data-error=errorcpwd]");
+        errorRname.innerText = "";
+        errorRpwd.innerText = "";
+        errorCpwd.innerText = "";
+        if(errors){
+          errors = JSON.parse(errors);
+          if(errors.name){
+            errorRname.innerText = errors.name;
+          }
+          if(errors.password){
+            errorRpwd.innerText = errors.password;
+          }
+          if(errors.confirm){
+            errorCpwd.innerText = errors.confirm;
+          }
+        }else{
+          location.reload();
+        }
+      }
+
+
+
+    </script>
+
+
+  </body>
+</html>
